@@ -2,6 +2,6 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/.vs
-/apps/REPLACE-WITH-DOMAIN-microservice/src/obj
-/apps/REPLACE-WITH-DOMAIN-microservice/src/bin
+.vs/
+**/bin/
+**/obj/

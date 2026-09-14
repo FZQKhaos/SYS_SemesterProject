@@ -6,7 +6,7 @@ public interface IMessageClient
         T message,
         CancellationToken cancellationToken = default);
 
-    Task SubscribeAsync<T>(
+    Task<IAsyncDisposable> SubscribeAsync<T>(
         string subscriptionId,
         Func<T, Task> handler,
         CancellationToken cancellationToken = default);

@@ -15,36 +15,45 @@ public class EasyNetQMessageClient : IMessageClient
         T message,
         CancellationToken cancellationToken = default)
     {
-        await _bus.PubSub.PublishAsync(message, cancellationToken);
+        await _bus.PubSub.PublishAsync(
+            message,
+            cancellationToken);
     }
 
-    public async Task SubscribeAsync<T>(
+    public async Task<IAsyncDisposable> SubscribeAsync<T>(
         string subscriptionId,
         Func<T, Task> handler,
         CancellationToken cancellationToken = default)
     {
-        await _bus.PubSub.SubscribeAsync(
+        var subscription = await _bus.PubSub.SubscribeAsync(
             subscriptionId,
             handler,
-            cancellationToken: cancellationToken);
+            cancellationToken);
+
+        return subscription;
     }
 }
 
-```csharp
 /*
 Johan Noter!
 
-private readonly IBus _bus:
-EasyNetQ's forbindelse til RabbitMQ. Bruges til at sende og modtage beskeder.
+IBus:
+EasyNetQ's forbindelse til message brokeren.
+Det er kun denne implementation der kender til EasyNetQ.
 
 PublishAsync<T>:
-Bruger _bus.PubSub.PublishAsync til at sende et C# object som en besked gennem RabbitMQ.
+Bruger EasyNetQ PubSub til at sende beskeden videre til RabbitMQ.
 
 SubscribeAsync<T>:
-Bruger _bus.PubSub.SubscribeAsync til at lytte efter beskeder af typen T.
-Når en besked kommer, bliver handler-funktionen kørt.
+Bruger EasyNetQ PubSub til at oprette en subscription for beskeder af typen T.
 
-CancellationToken:
-Gør det muligt at stoppe publish/subscribe operationen.
+subscription:
+EasyNetQ returnerer en SubscriptionResult når vi subscriber.
+SubscriptionResult implementerer IAsyncDisposable, så vi returnerer kun
+den generelle .NET interface og skjuler EasyNetQ detaljerne.
+
+Fordelen:
+Resten af microservicen bruger IMessageClient.
+Hvis vi senere skifter RabbitMQ/EasyNetQ ud med f.eks. Kafka,
+skal resten af applikationen ikke ændres.
 */
-```

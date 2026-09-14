@@ -1,41 +1,36 @@
+using YourService.Messaging;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddMessageClient(builder.Configuration);
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
-
-var summaries = new[]
+app.MapGet("/", () => Results.Ok(new
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    Service = "REPLACE-WITH-DOMAIN-microservice",
+    Status = "Running"
+}));
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+/*
+Johan Noter!
+
+AddMessageClient:
+Registrerer vores IMessageClient og EasyNetQ implementation.
+Program.cs ved kun at der findes en message client og behøver ikke kende
+detaljerne omkring RabbitMQ.
+
+MapGet("/"):
+Et simpelt endpoint så vi kan se at microservicen kører.
+
+Der er ikke lavet publish eller subscribe direkte i Program.cs.
+Det skal senere gøres i de services/handlers der faktisk har brug for messaging.
+*/
