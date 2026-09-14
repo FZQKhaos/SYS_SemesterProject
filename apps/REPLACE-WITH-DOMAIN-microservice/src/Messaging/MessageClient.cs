@@ -2,11 +2,11 @@ using EasyNetQ;
 
 namespace YourService.Messaging;
 
-public class EasyNetQMessageClient : IMessageClient
+public class MessageClient : IMessageClient
 {
     private readonly IBus _bus;
 
-    public EasyNetQMessageClient(IBus bus)
+    public MessageClient(IBus bus)
     {
         _bus = bus;
     }
