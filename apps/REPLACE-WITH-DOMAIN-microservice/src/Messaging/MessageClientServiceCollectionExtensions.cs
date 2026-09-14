@@ -15,7 +15,7 @@ public static class MessageClientServiceCollectionExtensions
 
         services.AddEasyNetQ(connectionString);
 
-        services.AddSingleton<IMessageClient, EasyNetQMessageClient>();
+        services.AddSingleton<IMessageClient, MessageClient>();
 
         return services;
     }
