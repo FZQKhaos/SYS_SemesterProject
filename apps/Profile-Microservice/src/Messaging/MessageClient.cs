@@ -1,6 +1,6 @@
 using EasyNetQ;
 
-namespace YourService.Messaging;
+namespace ProfileMicroservice.Messaging;
 
 public class MessageClient : IMessageClient
 {

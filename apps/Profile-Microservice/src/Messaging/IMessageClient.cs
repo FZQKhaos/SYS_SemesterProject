@@ -1,4 +1,4 @@
-namespace YourService.Messaging;
+namespace ProfileMicroservice.Messaging;
 
 public interface IMessageClient
 {
