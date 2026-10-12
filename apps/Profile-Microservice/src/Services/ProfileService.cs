@@ -54,6 +54,24 @@ public sealed class ProfileService : IProfileService
         return _profiles.TryRemove(id, out _);
     }
 
+    public Profile? RecordMessage(string id, DateTime postedAt)
+    {
+        if (!_profiles.TryGetValue(id, out var profile))
+        {
+            return null;
+        }
+
+        lock (profile)
+        {
+            if (profile.LastMessageAt is null || postedAt > profile.LastMessageAt)
+            {
+                profile.LastMessageAt = postedAt;
+            }
+        }
+
+        return profile;
+    }
+
     private static void ValidateDisplayName(string displayName)
     {
         if (string.IsNullOrWhiteSpace(displayName))
