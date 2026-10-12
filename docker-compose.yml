@@ -1,0 +1,29 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: profileapp
+      RABBITMQ_DEFAULT_PASS: profileapp
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  profilemicroservice:
+    build:
+      context: .
+      dockerfile: apps/Profile-Microservice/Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "8000:8080"
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: profileapp
+      RABBITMQ_PASSWORD: profileapp

@@ -1,4 +1,9 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".dockerignore" />
+    <File Path="apps/Profile-Microservice/Dockerfile" />
+    <File Path="docker-compose.yml" />
+  </Folder>
   <Project Path="apps/Profile-Microservice/src/src.csproj" />
   <Project Path="apps/Profile-Microservice/tests/tests.csproj" />
   <Project Path="Shared/Bizcord.Shared/Bizcord.Shared.csproj" Id="3ccafc1d-f7b0-401d-9e52-cf3cd46c7673" />

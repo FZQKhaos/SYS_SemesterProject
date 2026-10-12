@@ -8,10 +8,12 @@ public static class MessageClientServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var connectionString =
-            configuration["RabbitMQ:ConnectionString"]
-            ?? throw new InvalidOperationException(
-                "RabbitMQ:ConnectionString is missing.");
+        var rabbitMqHost = configuration["RABBITMQ_HOST"];
+        var connectionString = !string.IsNullOrWhiteSpace(rabbitMqHost)
+            ? $"host={rabbitMqHost};username={configuration["RABBITMQ_USER"]};password={configuration["RABBITMQ_PASSWORD"]}"
+            : configuration["RabbitMQ:ConnectionString"]
+              ?? throw new InvalidOperationException(
+                  "RabbitMQ:ConnectionString is missing.");
 
         services.AddEasyNetQ(connectionString);
 
