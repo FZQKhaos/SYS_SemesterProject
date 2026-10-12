@@ -1,3 +1,5 @@
+using Bizcord.Shared.Events;
+using ProfileMicroservice.Handlers;
 using ProfileMicroservice.Messaging;
 using ProfileMicroservice.Services;
 
@@ -8,7 +10,7 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddSingleton<IProfileService, ProfileService>();
 builder.Services.AddMessageClient(builder.Configuration);
-
+builder.Services.AddMessageHandler<MessagePostedEvent, MessagePostedHandler>("profile-microservice");
 var app = builder.Build();
 
 app.MapControllers();
