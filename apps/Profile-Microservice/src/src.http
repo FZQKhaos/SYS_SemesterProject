@@ -1,6 +1,28 @@
-@src_HostAddress = http://localhost:5210
+@host = http://localhost:8000
 
-GET {{src_HostAddress}}/weatherforecast/
+### List all profiles
+GET {{host}}/api/profiles
 Accept: application/json
 
-###
+### Create a profile
+POST {{host}}/api/profiles
+Content-Type: application/json
+
+{
+  "displayName": "Yahya"
+}
+
+### Get one profile (replace the id with one from the response above)
+GET {{host}}/api/profiles/REPLACE-WITH-ID
+Accept: application/json
+
+### Update display name
+PUT {{host}}/api/profiles/REPLACE-WITH-ID
+Content-Type: application/json
+
+{
+  "displayName": "Yahya K"
+}
+
+### Delete a profile
+DELETE {{host}}/api/profiles/REPLACE-WITH-ID
