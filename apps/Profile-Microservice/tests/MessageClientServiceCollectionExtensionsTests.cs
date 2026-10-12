@@ -2,7 +2,6 @@ using EasyNetQ;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ProfileMicroservice.Messaging;
-using ProfileMicroservice.Messaging;
 
 namespace tests;
 
