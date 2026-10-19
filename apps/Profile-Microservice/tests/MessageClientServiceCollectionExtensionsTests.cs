@@ -1,7 +1,7 @@
 using EasyNetQ;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using YourService.Messaging;
+using ProfileMicroservice.Messaging;
 
 namespace tests;
 

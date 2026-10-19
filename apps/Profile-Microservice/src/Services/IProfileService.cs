@@ -13,4 +13,6 @@ public interface IProfileService
     Profile? Update(string id, string displayName);
 
     bool Delete(string id);
+    
+    Profile? RecordMessage(string id, DateTime postedAt);
 }
