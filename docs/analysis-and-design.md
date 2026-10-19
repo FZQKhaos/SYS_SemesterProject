@@ -8,61 +8,53 @@ team owns one bounded context. **Our bounded context is User Profiles.** See
 `diagrams/Bizcord microservices DDD.drawio` for the coarse system overview (Servers,
 Profiles, Messaging).
 
-```mermaid
-flowchart LR
-    Other([Other services / clients]) -- "REST: CRUD profiles" --> Profiles
-    Messaging[Messaging service] -- "MessagePostedEvent" --> MQ[(RabbitMQ)]
-    MQ -- "subscribe" --> Profiles
-    Profiles -- "ProfileActivityUpdatedEvent" --> MQ
-    MQ -. "any interested service" .-> Others([Notifications, Analytics, ...])
-```
-
 ## 2. Responsibility
 
-The Profile service is responsible for user profiles and their friend list: creating,
+The Profile microService is responsible for user profiles and their friend list: creating,
 reading, updating and deleting profiles, and keeping simple profile activity data up to date.
 
+The Messaging microService is for Communication between Profiles, it does not own profiles or handle profiles. 
+it just gets absolute minimum info required from the Profile microservice to handle messaging between Profiles.
+
+Servers Utilise Messaging microservice to write between multible people on a server, and gets Profile Info from the Profile microservice in the same way as Messaging microService.
+Servers know what User ID's is on a server, and from there is the only thing that controls everything in a server.
+
 ## 3. Data ownership
+
+Note that the following is our first iteration and can change in the future and is a very coaurse and minimalistic representation of the final product.
+
+Profile:
 
 | Data | Owner | Notes |
 |------|-------|-------|
 | Profile (id, displayName, createdAt, lastMessageAt) | Profiles | Single source of truth |
-| Friend (id, displayName, createdAt) | Profiles | Our own private copy of another profile's basic data |
-| Messages, channels, presence, notifications | Other services | Never stored or modified here |
+| Friend (id, displayName, createdAt) | Profiles | Entity to avoid recursive data |
 
-Each microservice may have its own private version of an entity. `Friend` is exactly that:
-a read-only copy that does not make Profiles the owner of someone else's data.
+Messaging:
+
+| Data | Owner | Notes |
+|------|-------|-------|
+| Message (id, SenderID, ChatID, MessageBody, CreatedAt) | Messaging | Individual message belonging to a chat |
+| Chat (id, CreatedByID, RecipientID, ServerID) | Messaging | Represents either a private conversation or a server conversation (SQL CHECK constraint)|
+
+Server:
+
+| Data | Owner | Notes |
+|------|-------|-------|
+| Server (id, CreatedAt) | Servers | Controls basic information about different servers |
+| Voicechat (id, serverId, Name) | Servers | Servers private copy of a voicechat |
+| Textchat (id, serverId, Name) | Servers |  Servers private copy of a textchat |
+| ServerUsers (id, serverId, UserId) | Servers |  Server's users |
 
 ## 4. Boundaries
 
-- Profiles knows nothing about message content, channels or permissions.
-- Other services reference a profile only by its id and fetch details through our REST API.
-- The shared model (`ProfileDto`) exposes only `Id`, `DisplayName` and `CreatedAt`.
-  Internal data (friends, `LastMessageAt`) is hidden.
-- No other service reads our data store; access goes through the REST API or events.
+- Profiles knows nothing about messaging or servers.
+- Microservices needs to share as little infomation as possible to ensure high cohesion and loose coupling.
+- No other microservice reads other microservices data/database; access goes through the REST API or events.
 
 ## 5. Interactions
 
 | Direction | Style | What | Why |
 |-----------|-------|------|-----|
-| Other services → Profiles | REST (sync) | `GET/POST/PUT/DELETE /api/profiles` | Immediate answer needed |
-| Messaging → Profiles | Event (async) | `MessagePostedEvent` | Loose coupling; Messaging does not know we exist |
-| Profiles → anyone | Event (async) | `ProfileActivityUpdatedEvent` | Lets other services react without us knowing them |
-
-## 6. Events
-
-| Event | Published by | Consumed by | Key fields |
-|-------|--------------|-------------|------------|
-| `MessagePostedEvent` | Messaging | Profiles (and others) | MessageId, ChannelId, AuthorId, Content, PostedAt |
-| `ProfileActivityUpdatedEvent` | Profiles | Any interested service | MessageId, ProfileId, LastMessageAt, ProcessedAt |
-
-The handler is idempotent (`LastMessageAt` only moves forward), because the broker may
-deliver a message more than once or out of order. `MessageId` is carried through for traceability.
-
-## 7. Trade-offs
-
-- **In-memory storage:** profiles are lost on restart. A database per service replaces it later.
-- **Eventual consistency:** `LastMessageAt` lags behind the message by the broker delay. Accepted for loose coupling.
-- **Shared contract library:** shared event types couple services at compile time. 
-  This is intended: it enforces message shape, while contract tests verify values.
-- **No outbox:** if RabbitMQ is down while we publish, the result event is lost. An outbox would fix it.
+| Synchronous Communication between microservies | REST (sync) | `GET/POST/PUT/DELETE /api/####` | Immediate answer needed (dangerous use as little as possible to avoid coupling)|
+| Asynchronous communication | Publish/subscribe (async) | `MessageClient` | Handling of events that does not need to be handled instantly |
