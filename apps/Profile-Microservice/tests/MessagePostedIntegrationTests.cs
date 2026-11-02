@@ -13,7 +13,7 @@ public class MessagePostedIntegrationTests : IClassFixture<WebApplicationFactory
 
     public MessagePostedIntegrationTests(WebApplicationFactory<Program> factory)
     {
-        // docker-compose opretter brugeren "profileapp" og ikke "guest".
+        // docker-compose creates the "profileapp" user instead of "guest".
         Environment.SetEnvironmentVariable("RABBITMQ_HOST", "localhost");
         Environment.SetEnvironmentVariable("RABBITMQ_USER", "profileapp");
         Environment.SetEnvironmentVariable("RABBITMQ_PASSWORD", "profileapp");
@@ -24,7 +24,10 @@ public class MessagePostedIntegrationTests : IClassFixture<WebApplicationFactory
     public async Task MessagePostedEvent_IsConsumed_AndResultEventPublished()
     {
         // Arrange
-        _ = _factory.CreateClient(); // starter programmet, inkl. handlerens abonnement
+        _ = _factory.CreateClient(); // Starts ASP.NET Core and the background subscriber.
+        await _factory.Services
+            .GetRequiredService<MessageHandlerHostedService<MessagePostedEvent>>()
+            .WhenSubscribed.WaitAsync(TimeSpan.FromSeconds(10));
 
         var profiles = _factory.Services.GetRequiredService<IProfileService>();
         var client = _factory.Services.GetRequiredService<IMessageClient>();

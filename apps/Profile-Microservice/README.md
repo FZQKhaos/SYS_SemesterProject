@@ -23,10 +23,16 @@ Design rationale: see [`docs/analysis-and-design.md`](../../docs/analysis-and-de
 
 | Event                         | Direction | Notes |
 |-------------------------------|-----------|-------|
-| `MessagePostedEvent`          | Consumed  | Subscription id `profile-microservice`. Unknown authors are ignored. `LastMessageAt` only moves forward, so redelivery is harmless. |
+| `MessagePostedEvent`          | Consumed  | Subscription id `profile-microservice`. Unknown authors are ignored. `LastMessageAt` only moves forward, so redelivery does not move it backward, but outgoing duplicate events are still possible. |
 | `ProfileActivityUpdatedEvent` | Published | Contains `MessageId`, `ProfileId`, `LastMessageAt`, `ProcessedAt`. |
 
 Both types live in `Shared/Bizcord.Shared/Events`.
+
+## Resiliency review (Chapter 12)
+
+See [FAILURE-POINTS.md](FAILURE-POINTS.md) for identified failure points, the selected resilience patterns, implementation details, limitations, and outage simulation instructions.
+
+RabbitMQ subscription setup now runs in the background with bounded setup attempts and exponential-backoff retries. REST CRUD stays available if RabbitMQ is initially unavailable. Outbound publishes have a bounded timeout; **a timeout is not proof of non-delivery**, and this version does not guarantee durable messages or exactly-once processing. Profiles are still held in memory and are lost on process restart.
 
 ## Run with Docker
 
@@ -53,5 +59,6 @@ dotnet test apps/Profile-Microservice/tests
 | Test type   | File                              | What it proves |
 |-------------|-----------------------------------|----------------|
 | Unit        | `MessagePostedHandlerTests`       | Handler publishes a result event with the correct `MessageId`; unknown author publishes nothing. |
+| Unit        | `MessageHandlerHostedServiceTests`| Temporary RabbitMQ subscription failure recovers; a hung attempt does not block API startup or shutdown. |
 | Contract    | `MessagePostedHandlerTests`       | Handler accepts the minimum valid `MessagePostedEvent`. |
 | Integration | `MessagePostedIntegrationTests`   | Event published on the real broker is consumed and the result event is published. |

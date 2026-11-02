@@ -2,6 +2,7 @@
   <Folder Name="/Solution Items/">
     <File Path=".dockerignore" />
     <File Path="apps/Profile-Microservice/Dockerfile" />
+    <File Path="apps/Profile-Microservice/FAILURE-POINTS.md" />
     <File Path="docker-compose.yml" />
   </Folder>
   <Project Path="apps/Profile-Microservice/src/src.csproj" />
