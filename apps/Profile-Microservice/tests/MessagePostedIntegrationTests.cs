@@ -17,6 +17,9 @@ public class MessagePostedIntegrationTests : IClassFixture<WebApplicationFactory
         Environment.SetEnvironmentVariable("RABBITMQ_HOST", "localhost");
         Environment.SetEnvironmentVariable("RABBITMQ_USER", "profileapp");
         Environment.SetEnvironmentVariable("RABBITMQ_PASSWORD", "profileapp");
+        Environment.SetEnvironmentVariable("Jwt__SigningKey", "test-only-signing-key-at-least-32-bytes!");
+        Environment.SetEnvironmentVariable("Jwt__Issuer", "bizcord-auth");
+        Environment.SetEnvironmentVariable("Jwt__Audience", "internal-api");
         _factory = factory;
     }
 

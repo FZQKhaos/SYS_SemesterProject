@@ -14,6 +14,17 @@ services:
       retries: 10
       start_period: 20s
 
+  vault:
+    image: hashicorp/vault:1.21.0
+    ports:
+      - "127.0.0.1:8200:8200"
+    volumes:
+      - ./apps/Vault/config.hcl:/vault/config/config.hcl:ro
+      - vault-data:/vault/file
+    command: server
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+
   profilemicroservice:
     build:
       context: .
@@ -21,9 +32,46 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-    ports:
-      - "8000:8080"
+      vault:
+        condition: service_started
+    restart: on-failure
     environment:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_USER: profileapp
-      RABBITMQ_PASSWORD: profileapp
+      Vault__Address: http://vault:8200
+      Vault__Username: profile-svc
+      Vault__Password: ${PROFILE_SVC_VAULT_PASSWORD:?Set PROFILE_SVC_VAULT_PASSWORD in .env}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:?Set JWT_SIGNING_KEY in .env}
+      Jwt__Issuer: bizcord-auth
+      Jwt__Audience: internal-api
+
+      
+
+  gateway:
+    build:
+      context: .
+      dockerfile: apps/Gateway/Dockerfile
+    depends_on:
+      - profilemicroservice
+    ports:
+      - "8000:8080"
+    environment:
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:?Set JWT_SIGNING_KEY in .env}
+      Jwt__Issuer: bizcord-auth
+      Jwt__Audience: internal-api
+    
+  auth-service:
+    build:
+      context: .
+      dockerfile: apps/Auth-Service/Dockerfile
+    ports:
+      - "127.0.0.1:8100:8080"
+    environment:
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:?Set JWT_SIGNING_KEY in .env}
+      Jwt__Issuer: bizcord-auth
+      Jwt__Audience: internal-api
+      Clients__messageservice__Secret: ${MESSAGE_SERVICE_SECRET:?Set MESSAGE_SERVICE_SECRET in .env}
+      Clients__unprivileged__Secret: ${UNPRIVILEGED_SECRET:?Set UNPRIVILEGED_SECRET in .env}
+
+volumes:
+  vault-data:

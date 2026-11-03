@@ -1,4 +1,13 @@
 <Solution>
+  <Folder Name="/apps/" />
+  <Folder Name="/apps/Auth-Service/" />
+  <Folder Name="/apps/Auth-Service/src/">
+    <Project Path="apps/Auth-Service/src/AuthService.csproj" />
+  </Folder>
+  <Folder Name="/apps/Gateway/" />
+  <Folder Name="/apps/Gateway/src/">
+    <Project Path="apps/Gateway/src/Gateway.csproj" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".dockerignore" />
     <File Path="apps/Profile-Microservice/Dockerfile" />
