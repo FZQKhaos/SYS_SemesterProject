@@ -1,0 +1,31 @@
+{
+  "Routes": [
+    {
+      "UpstreamPathTemplate": "/internal/profiles",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/api/internal/profiles",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "profilemicroservice", "Port": 8080 } ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": [ "Bearer" ]
+      },
+      "RouteClaimsRequirement": {
+        "role": "internal-service"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/profiles",
+      "UpstreamHttpMethod": [ "GET", "POST" ],
+      "DownstreamPathTemplate": "/api/profiles",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "profilemicroservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/profiles/{id}",
+      "UpstreamHttpMethod": [ "GET", "PUT", "DELETE" ],
+      "DownstreamPathTemplate": "/api/profiles/{id}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "profilemicroservice", "Port": 8080 } ]
+    }
+  ]
+}

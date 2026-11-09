@@ -4,6 +4,7 @@ namespace ProfileMicroservice.Messaging;
 
 public class MessageClient : IMessageClient
 {
+    private static readonly TimeSpan PublishTimeout = TimeSpan.FromSeconds(5);
     private readonly IBus _bus;
 
     public MessageClient(IBus bus)
@@ -15,9 +16,22 @@ public class MessageClient : IMessageClient
         T message,
         CancellationToken cancellationToken = default)
     {
-        await _bus.PubSub.PublishAsync(
-            message,
-            cancellationToken);
+        using var attemptTimeout =
+            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        attemptTimeout.CancelAfter(PublishTimeout);
+
+        try
+        {
+            await _bus.PubSub.PublishAsync(message, attemptTimeout.Token)
+                .WaitAsync(attemptTimeout.Token);
+        }
+        catch (OperationCanceledException exception)
+            when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new TimeoutException(
+                $"Publishing {typeof(T).Name} exceeded the {PublishTimeout.TotalSeconds}s timeout.",
+                exception);
+        }
     }
 
     public async Task<IAsyncDisposable> SubscribeAsync<T>(
@@ -33,27 +47,3 @@ public class MessageClient : IMessageClient
         return subscription;
     }
 }
-
-/*
-Johan Noter!
-
-IBus:
-EasyNetQ's forbindelse til message brokeren.
-Det er kun denne implementation der kender til EasyNetQ.
-
-PublishAsync<T>:
-Bruger EasyNetQ PubSub til at sende beskeden videre til RabbitMQ.
-
-SubscribeAsync<T>:
-Bruger EasyNetQ PubSub til at oprette en subscription for beskeder af typen T.
-
-subscription:
-EasyNetQ returnerer en SubscriptionResult når vi subscriber.
-SubscriptionResult implementerer IAsyncDisposable, så vi returnerer kun
-den generelle .NET interface og skjuler EasyNetQ detaljerne.
-
-Fordelen:
-Resten af microservicen bruger IMessageClient.
-Hvis vi senere skifter RabbitMQ/EasyNetQ ud med f.eks. Kafka,
-skal resten af applikationen ikke ændres.
-*/
