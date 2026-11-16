@@ -35,7 +35,16 @@ services:
       vault:
         condition: service_started
     restart: on-failure
+    # Label der sættes på containeren, så Fluentd kan genkende dens logs
+    labels:
+      logsource: profile
+    logging:
+      driver: "json-file"   # stdout gemmes som JSON-fil, som Fluentd-sidecaren kan læse
+      options:
+        labels: "logsource" # skriv labelen ind i hver logline (feltet "attrs")
     environment:
+      # Log som én JSON-linje pr. besked, så Fluentd kan parse felterne (niveau, kategori, besked)
+      Logging__Console__FormatterName: json
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_USER: profileapp
       Vault__Address: http://vault:8200
@@ -73,5 +82,52 @@ services:
       Clients__messageservice__Secret: ${MESSAGE_SERVICE_SECRET:?Set MESSAGE_SERVICE_SECRET in .env}
       Clients__unprivileged__Secret: ${UNPRIVILEGED_SECRET:?Set UNPRIVILEGED_SECRET in .env}
 
+  # Sidecar til logging: læser containernes stdout-logs og sender dem videre (her: til konsol)
+  fluentd:
+    build: ./fluentd   # eget image med Elasticsearch-plugin
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    user: root   # Dockers logmappe er kun læsbar for root
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    volumes:
+      - ./fluentd/fluent.conf:/fluentd/etc/fluent.conf:ro
+      - /var/lib/docker/containers:/fluentd/log/containers:ro
+    environment:
+      FLUENTD_CONF: fluent.conf
+    logging:
+      driver: "local"   # så Fluentds egne logs ikke ender i json-file og bliver læst igen (uendelig løkke)
+
+  # Centralt logsystem: Elasticsearch gemmer logs, Kibana viser dem
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"   # kun til lokal udvikling
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "127.0.0.1:9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -qE '\"status\":\"(green|yellow)\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.3
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports:
+      - "127.0.0.1:5601:5601"
+
 volumes:
+  es-data:
   vault-data:
