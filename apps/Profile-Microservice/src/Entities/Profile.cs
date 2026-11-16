@@ -6,5 +6,7 @@ public class Profile
     public DateTime? CreatedAt { get; set; }
     public string? DisplayName { get; set; }
     public DateTime? LastMessageAt { get; set; }
+    public bool IsBanned { get; set; }
+    public DateTime? BannedAt { get; set; }
     public List<Friend> Friends { get; set; } = new();
 }

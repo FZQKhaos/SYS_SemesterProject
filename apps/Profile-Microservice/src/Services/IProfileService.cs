@@ -15,4 +15,8 @@ public interface IProfileService
     bool Delete(string id);
     
     Profile? RecordMessage(string id, DateTime postedAt);
+    
+    BanResult Ban(string id);
+    bool Unban(string id);
+    
 }
