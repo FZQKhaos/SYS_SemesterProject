@@ -1,4 +1,10 @@
 <Solution>
+  <Folder Name="/apps/" />
+  <Folder Name="/apps/Servers-Stub/" />
+  <Folder Name="/apps/Servers-Stub/src/">
+    <Project Path="apps/Servers-Stub/src/ServersStub.csproj" />
+  </Folder>
+  <Folder Name="/Shared/" />
   <Folder Name="/Solution Items/">
     <File Path=".dockerignore" />
     <File Path="apps/Profile-Microservice/Dockerfile" />

@@ -11,7 +11,8 @@ public static class ProfileMapper
         {
             Id = profile.Id,
             CreatedAt = profile.CreatedAt,
-            DisplayName = profile.DisplayName
+            DisplayName = profile.DisplayName,
+            IsBanned = profile.IsBanned
         };
     }
 }

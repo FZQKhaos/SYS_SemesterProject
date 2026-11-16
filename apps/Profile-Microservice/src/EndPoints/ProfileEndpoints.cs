@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using ProfileMicroservice.Mappings;
 using ProfileMicroservice.Requests;
 using ProfileMicroservice.Services;
+using Bizcord.Shared.Events;
+using ProfileMicroservice.Messaging;
 
 namespace ProfileMicroservice.Controllers;
 
@@ -11,12 +13,15 @@ namespace ProfileMicroservice.Controllers;
 public class ProfilesController : ControllerBase
 {
     private readonly IProfileService _profileService;
+    private readonly IMessageClient _messageClient;
 
-    public ProfilesController(IProfileService profileService)
+    public ProfilesController(
+        IProfileService profileService,
+        IMessageClient messageClient)
     {
         _profileService = profileService;
+        _messageClient = messageClient;
     }
-
     [HttpGet]
     public ActionResult<IEnumerable<ProfileDto>> GetAll()
     {
@@ -95,5 +100,63 @@ public class ProfilesController : ControllerBase
         }
 
         return NoContent();
+    }
+    
+    [HttpPost("{id}/ban")]
+    public async Task<IActionResult> Ban(
+        string id,
+        CancellationToken cancellationToken)
+    {
+        var result = _profileService.Ban(id);
+
+        if (result == BanResult.NotFound)
+        {
+            return NotFound();
+        }
+
+        if (result == BanResult.AlreadyBanned)
+        {
+            return Conflict(new { Error = "User is already banned." });
+        }
+
+        var banId = Guid.NewGuid();
+
+        await _messageClient.PublishAsync(
+            new UserBannedEvent
+            {
+                BanId = banId,
+                UserId = Guid.Parse(id),
+                BannedAt = DateTime.UtcNow
+            },
+            cancellationToken);
+
+        return Accepted(new { BanId = banId });
+    }
+    
+    
+    [HttpPost("{id}/unban")]
+    public async Task<IActionResult> Unban(
+        string id,
+        CancellationToken cancellationToken)
+    {
+        var found = _profileService.Unban(id);
+
+        if (!found)
+        {
+            return NotFound();
+        }
+
+        var unbanId = Guid.NewGuid();
+
+        await _messageClient.PublishAsync(
+            new UserUnbannedEvent
+            {
+                UnbanId = unbanId,
+                UserId = Guid.Parse(id),
+                UnbannedAt = DateTime.UtcNow
+            },
+            cancellationToken);
+
+        return Accepted(new { UnbanId = unbanId });
     }
 }

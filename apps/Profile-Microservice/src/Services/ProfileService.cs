@@ -71,6 +71,44 @@ public sealed class ProfileService : IProfileService
 
         return profile;
     }
+    
+    public BanResult Ban(string id)
+    {
+        if (!_profiles.TryGetValue(id, out var profile))
+        {
+            return BanResult.NotFound;
+        }
+
+        lock (profile)
+        {
+            if (profile.IsBanned)
+            {
+                return BanResult.AlreadyBanned;
+            }
+
+            profile.IsBanned = true;
+            profile.BannedAt = DateTime.UtcNow;
+        }
+
+        return BanResult.Banned;
+    }
+    
+    public bool Unban(string id)
+    {
+        if (!_profiles.TryGetValue(id, out var profile))
+        {
+            return false;
+        }
+
+        lock (profile)
+        {
+            profile.IsBanned = false;
+            profile.BannedAt = null;
+        }
+
+        return true;
+    }
+    
 
     private static void ValidateDisplayName(string displayName)
     {
