@@ -102,6 +102,7 @@ builder.Services.AddAuthorizationBuilder()
         .RequireClaim("role", "internal-service"));
 
 builder.Services.AddSingleton<IProfileService, ProfileService>();
+builder.Services.AddSingleton<IBanSagaTracker, BanSagaTracker>();
 builder.Services.AddMessageClient(builder.Configuration);
 builder.Services.AddMessageHandler<MessagePostedEvent, MessagePostedHandler>("profile-microservice");
 builder.Services.AddMessageHandler<MembershipSuspensionFailedEvent, MembershipSuspensionFailedHandler>("profile-microservice");
