@@ -103,6 +103,12 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddSingleton<IProfileService, ProfileService>();
 builder.Services.AddSingleton<IBanSagaTracker, BanSagaTracker>();
+
+// GraphQL presentation layer (HotChocolate). Genbruger IProfileService via DI.
+builder.Services
+    .AddGraphQLServer()
+    .AddQueryType<ProfileMicroservice.GraphQL.ProfileQuery>()
+    .AddMutationType<ProfileMicroservice.GraphQL.ProfileMutation>();
 builder.Services.AddMessageClient(builder.Configuration);
 builder.Services.AddMessageHandler<MessagePostedEvent, MessagePostedHandler>("profile-microservice");
 builder.Services.AddMessageHandler<MembershipSuspensionFailedEvent, MembershipSuspensionFailedHandler>("profile-microservice");
@@ -115,6 +121,7 @@ var app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapGraphQL(); // endpoint: /graphql
 
 app.Run();
 
