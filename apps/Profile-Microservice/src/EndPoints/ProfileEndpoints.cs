@@ -5,6 +5,7 @@ using ProfileMicroservice.Requests;
 using ProfileMicroservice.Services;
 using Bizcord.Shared.Events;
 using ProfileMicroservice.Messaging;
+using Rebus.Bus;
 
 namespace ProfileMicroservice.Controllers;
 
@@ -14,14 +15,18 @@ public class ProfilesController : ControllerBase
 {
     private readonly IProfileService _profileService;
     private readonly IMessageClient _messageClient;
+    private readonly IBus _bus;
 
     public ProfilesController(
         IProfileService profileService,
-        IMessageClient messageClient)
+        IMessageClient messageClient,
+        IBus bus)
     {
         _profileService = profileService;
         _messageClient = messageClient;
+        _bus = bus;
     }
+
     [HttpGet]
     public ActionResult<IEnumerable<ProfileDto>> GetAll()
     {
@@ -101,11 +106,9 @@ public class ProfilesController : ControllerBase
 
         return NoContent();
     }
-    
+
     [HttpPost("{id}/ban")]
-    public async Task<IActionResult> Ban(
-        string id,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> Ban(string id)
     {
         var result = _profileService.Ban(id);
 
@@ -121,19 +124,16 @@ public class ProfilesController : ControllerBase
 
         var banId = Guid.NewGuid();
 
-        await _messageClient.PublishAsync(
-            new UserBannedEvent
-            {
-                BanId = banId,
-                UserId = Guid.Parse(id),
-                BannedAt = DateTime.UtcNow
-            },
-            cancellationToken);
+        await _bus.Publish(new UserBannedEvent
+        {
+            BanId = banId,
+            UserId = Guid.Parse(id),
+            BannedAt = DateTime.UtcNow
+        });
 
         return Accepted(new { BanId = banId });
     }
-    
-    
+
     [HttpPost("{id}/unban")]
     public async Task<IActionResult> Unban(
         string id,

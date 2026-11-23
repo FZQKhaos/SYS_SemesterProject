@@ -1,5 +1,7 @@
 # Saga: Banning a user mid-conversation (Bizcord)
 
+> **Note:** This document describes the Task 01 design. In Task 02 the ban flow was rebuilt as an orchestrated Rebus saga, see `saga-task02.md`. The steps, events and failure handling below still apply. The state tracking and the compensation described here are now done by `BanSaga`.
+
 Task 01 – Saga Workflow Scenarios. Scenario chosen: **"A user gets banned mid-conversation"**.
 
 ## 1. Scope
@@ -64,7 +66,7 @@ When step 2 fails, Profile unbans directly in `MembershipSuspensionFailedHandler
 - Coupling is kept low: services only share event contracts in `Shared`. Profile knows nothing about Servers (design rule in `analysis-and-design.md`).
 
 ### 4.2 Orchestration vs. choreography
-**Current implementation: choreography.** (Revisited in Task 02, see `saga-task02.md`.)
+**Task 01 implementation: choreography.** In Task 02 the same scenario was rebuilt as an orchestrated saga with Rebus (see `saga-task02.md`). The analysis below is for the choreography version.
 - Newman (p. 195): one team owning the whole saga is fine with orchestration; with **several teams** he prefers choreography. Here Profile is ours, while Servers and Messaging belong to other teams.
 - Services react to events and no service knows the others. No central component can become a single point of failure or absorb domain logic.
 - **Cost:** the process is implicit in the event flow. We mitigate with a correlation id on every event and a state view in Profile (section 5.1).
@@ -141,7 +143,7 @@ These were **manual end-to-end runs** against RabbitMQ with `Servers-Stub` runni
 | F | Ban, then unban | `isBanned = false`; Servers reactivates, Voice restores access and notifies participants |
 | G | Unban unknown id | `404 NotFound` |
 
-[TODO: add the results for Sessions, Messaging and `GET /api/bans/{banId}` once they are run and recorded.]
+The scenarios were re-run on the Rebus version in Task 02, including Sessions, Messaging and `GET /api/bans/{banId}`. The results are in `saga-task02.md`, section 8.
 
 ## 9. Limitations and future work
 
