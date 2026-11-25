@@ -46,5 +46,13 @@ builder.Services.AddOcelot(builder.Configuration);
 
 var app = builder.Build();
 
+
+app.Use(async (context, next) =>
+{
+    context.Request.Headers.Remove("X-UserId");
+    context.Request.Headers.Remove("X-Role");
+    await next();
+});
+
 await app.UseOcelot();
 await app.RunAsync();

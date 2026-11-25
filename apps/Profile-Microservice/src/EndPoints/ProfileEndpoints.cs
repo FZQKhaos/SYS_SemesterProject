@@ -36,6 +36,18 @@ public class ProfilesController : ControllerBase
 
         return Ok(profiles);
     }
+    
+    
+    [HttpGet("me")]
+    public IActionResult GetMe([FromHeader(Name = "X-UserId")] string? userId)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        return Ok(new { UserId = userId });
+    }
 
     [HttpGet("{id}")]
     public ActionResult<ProfileDto> GetById(string id)
