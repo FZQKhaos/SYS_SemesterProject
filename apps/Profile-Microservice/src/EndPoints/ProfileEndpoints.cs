@@ -15,18 +15,20 @@ public class ProfilesController : ControllerBase
 {
     private readonly IProfileService _profileService;
     private readonly IMessageClient _messageClient;
-    private readonly IBus _bus;
+    private readonly IServiceProvider _services;
+    private readonly RebusReadiness _rebusReadiness;
 
     public ProfilesController(
         IProfileService profileService,
         IMessageClient messageClient,
-        IBus bus)
+        IServiceProvider services,
+        RebusReadiness rebusReadiness)
     {
         _profileService = profileService;
         _messageClient = messageClient;
-        _bus = bus;
+        _services = services;
+        _rebusReadiness = rebusReadiness;
     }
-
     [HttpGet]
     public ActionResult<IEnumerable<ProfileDto>> GetAll()
     {
@@ -122,6 +124,14 @@ public class ProfilesController : ControllerBase
     [HttpPost("{id}/ban")]
     public async Task<IActionResult> Ban(string id)
     {
+        // Tjek bussen FØR profilen ændres, ellers kunne en bruger blive bannet uden at sagaen starter.
+        if (!_rebusReadiness.IsReady)
+        {
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                new { Error = "The ban saga is not ready yet. Try again shortly." });
+        }
+
         var result = _profileService.Ban(id);
 
         if (result == BanResult.NotFound)
@@ -136,7 +146,10 @@ public class ProfilesController : ControllerBase
 
         var banId = Guid.NewGuid();
 
-        await _bus.Publish(new UserBannedEvent
+        // Bussen hentes først her, for den må kun oprettes, når RabbitMQ er klar (se RebusStartupService).
+        var bus = _services.GetRequiredService<IBus>();
+
+        await bus.Publish(new UserBannedEvent
         {
             BanId = banId,
             UserId = Guid.Parse(id),

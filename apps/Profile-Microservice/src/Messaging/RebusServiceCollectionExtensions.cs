@@ -20,6 +20,8 @@ public static class RebusServiceCollectionExtensions
         var connectionString =
             $"amqp://{Uri.EscapeDataString(user)}:{Uri.EscapeDataString(password)}@{host}";
 
+        var servicesBefore = services.Count;
+
         services.AddRebus(
             configure => configure
                 .Transport(t => t.UseRabbitMq(connectionString, "profile-saga"))
@@ -36,7 +38,23 @@ public static class RebusServiceCollectionExtensions
                 await bus.Subscribe<CallTerminationFailedEvent>();
             });
 
+        // AddRebus registrerer en hosted service, der opretter bussen, mens værten starter.
+        // Er RabbitMQ nede, kaster den, og så starter hele servicen ikke. Vi fjerner den
+        // og starter bussen i stedet i RebusStartupService, med genforsøg og i baggrunden.
+        // Kun det, AddRebus lige har tilføjet (index servicesBefore og op), bliver fjernet.
+        for (var i = services.Count - 1; i >= servicesBefore; i--)
+        {
+            if (services[i].ServiceType == typeof(IHostedService))
+            {
+                services.RemoveAt(i);
+            }
+        }
+
         services.AddRebusHandler<BanSaga>();
+
+        services.AddSingleton(new RebusBrokerSettings(connectionString));
+        services.AddSingleton<RebusReadiness>();
+        services.AddHostedService<RebusStartupService>();
 
         return services;
     }
