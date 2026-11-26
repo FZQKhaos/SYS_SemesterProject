@@ -6,7 +6,10 @@ using ProfileMicroservice.Services;
 
 namespace tests;
 
+
+
 [Trait("Category", "Integration")]
+[Collection("Profile host")] 
 public class MessagePostedIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly WebApplicationFactory<Program> _factory;

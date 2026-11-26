@@ -4,12 +4,14 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace tests;
 
+
+
 // Tester GraphQL-laget gennem HTTP (POST /graphql), præcis som en frontend ville gøre.
 // Kræver ikke RabbitMQ: GraphQL bruger kun IProfileService.
+[Collection("Profile host")]
 public class GraphQLTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly WebApplicationFactory<Program> _factory;
-
     public GraphQLTests(WebApplicationFactory<Program> factory)
     {
         Environment.SetEnvironmentVariable("Jwt__SigningKey", "test-only-signing-key-at-least-32-bytes!");
