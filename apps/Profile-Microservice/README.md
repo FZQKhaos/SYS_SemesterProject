@@ -32,7 +32,12 @@ Both types live in `Shared/Bizcord.Shared/Events`.
 
 See [FAILURE-POINTS.md](FAILURE-POINTS.md) for identified failure points, the selected resilience patterns, implementation details, limitations, and outage simulation instructions.
 
-RabbitMQ subscription setup now runs in the background with bounded setup attempts and exponential-backoff retries. REST CRUD stays available if RabbitMQ is initially unavailable. Outbound publishes have a bounded timeout; **a timeout is not proof of non-delivery**, and this version does not guarantee durable messages or exactly-once processing. Profiles are still held in memory and are lost on process restart.
+The host does not wait for RabbitMQ at startup:
+
+- **EasyNetQ subscription:** set up in the background with bounded setup attempts and exponential-backoff retries.
+- **Rebus saga bus:** started in the background once a RabbitMQ login succeeds, with exponential-backoff retries (250 ms up to 10 s). Until the bus is ready, `POST /api/profiles/{id}/ban` returns 503 and the profile is not banned. If bus creation still fails, the app logs the error, sets exit code 1 and stops as a last resort; in Docker Compose, `restart: on-failure` restarts the container (this failure path is not tested).
+
+See [FAILURE-POINTS.md](FAILURE-POINTS.md) for what has and has not been tested, and section 5.3 of [`docs/testing-guide.md`](../../docs/testing-guide.md) for the RabbitMQ outage test. Outbound EasyNetQ publishes have a bounded timeout; **a timeout is not proof of non-delivery**, and this version does not guarantee durable messages or exactly-once processing. Profiles are still held in memory and are lost on process restart.
 
 ## Run with Docker
 
